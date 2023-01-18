@@ -18,7 +18,7 @@ camera_parameters = [443.6319712,  # fx
                      959.49982957, # cx
                      539.49965467] # cy
 
-cameraInUse = 1
+cameraInUse = 0
 
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)

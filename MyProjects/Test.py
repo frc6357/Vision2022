@@ -1,10 +1,7 @@
-from cmath import tan
 import cv2
 import time
 import numpy as np
-import math
 from pupil_apriltags import Detector
-from Constants import VisionConstants
 
 at_detector = Detector(families='tag36h11',
                        nthreads=16,
@@ -51,24 +48,21 @@ while(True):
         # Draws circle dot at the center of the screen
         cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
 
-        pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
+        # If the center is located on the right of the screen, degree calculation  for the right will be done.
+        if center[0] > 320:
+            # Subtract the center position by 320 to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
+            degree  = (int(center[0]) - 320) * 0.19328
+        # If the center is located on the left of the screen, degree calculation  for the right will be done.
+        elif center[0] <= 320:
+            # Subtract 320 by the center position to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
+            degree = (320 - int(center[0])) * 0.19328
+        # In case the tag is not on the screen.
+        else:
+            continue
         
-        #print(pixelDistanceY)
-
-        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
-
-        radians = (math.pi / 180) * degreesY
-
-        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
-
-        roundedDistance = float("{0:.2f}".format(distance))
-    
-        
-        print(-roundedDistance)
-
-
-        #print(center)
-        #time.sleep(1)
+        # Temp Test Delete Later
+        #print(frame.shape)
+        print(degree)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)

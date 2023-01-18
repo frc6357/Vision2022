@@ -23,6 +23,28 @@ camera_parameters = [443.6319712,  # fx
 
 cameraInUse = 0
 
+
+
+def focalLengthPx(imageCenter, corner):
+    # Get X,Y value of center in np array form 
+    center = imageCenter
+
+    
+    pixelDistanceY =  (corner[2][1] - corner[1][1])
+        
+        #print(pixelDistanceY)
+
+    degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
+
+    radians = (math.pi / 180) * degreesY
+
+    distance = (VisionConstants.tagHeightPx/2) / (math.tan(radians))
+
+    roundedDistance = float("{0:.2f}".format(distance))
+    
+        
+    return -roundedDistance
+
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)
 
@@ -46,29 +68,26 @@ while(True):
                     (255, 0, 255), 2)
         
         # Get X,Y value of center in np array form 
-        center = tag.center
-
-        # Draws circle dot at the center of the screen
-        cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
-
-        pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
+        homography = tag.homography # TODO:try cv2.findHomography
+        print(homography)
+        cp = camera_parameters
         
-        #print(pixelDistanceY)
+        K = np.matrix([[cp[0],0,cp[2]],
+                       [0,cp[1],cp[3]],
+                       [0,0,1]])
 
-        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
+        h1 = homography[0]
+        h3 = homography[2]
 
-        radians = (math.pi / 180) * degreesY
+        K_inv = np.linalg.inv(K)
 
-        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
+        L = 1 / (np.linalg.norm(np.dot(K_inv, h1)))
 
-        roundedDistance = float("{0:.2f}".format(distance))
-    
+        T = L * (K_inv @ h3.reshape(3,1))
+
+        #print(T)
+
         
-        print(-roundedDistance)
-
-
-        #print(center)
-        #time.sleep(1)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)

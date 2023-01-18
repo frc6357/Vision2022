@@ -23,6 +23,9 @@ camera_parameters = [443.6319712,  # fx
 
 cameraInUse = 0
 
+def DistanceCalculationAngled():
+    pass
+
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)
 
@@ -44,6 +47,10 @@ while(True):
                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
+
+        #cv2.line(frame, (int(tag.corners[2][1]), int(tag.corners[1][1])), (0,255,255),2)
+
+        #TODO: Important: tag.corners[][] first bracket is the qardinate, second is 0 for x pos or 1 for y pos
         
         # Get X,Y value of center in np array form 
         center = tag.center
@@ -62,9 +69,17 @@ while(True):
         distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
 
         roundedDistance = float("{0:.2f}".format(distance))
+
+
+
+        rightSideDistance = math.sqrt(pow((tag.corners[1][0] - tag.corners[2][0]), 2) + pow((tag.corners[1][1] - tag.corners[2][1]),2))
+
+        leftSideDistance = math.sqrt(pow((tag.corners[0][0] - tag.corners[3][0]), 2) + pow((tag.corners[0][1] - tag.corners[3][1]),2))
     
+        ratio = rightSideDistance / leftSideDistance
+        print(ratio)
         
-        print(-roundedDistance)
+        #print(str(leftSideDistance)  + " " + str(rightSideDistance))
 
 
         #print(center)
