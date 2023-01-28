@@ -67,23 +67,53 @@ while(True):
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
         
-        # Get X,Y value of center in np array form 
-        homography = tag.homography # TODO:try cv2.findHomography
-        print(homography)
-        cp = camera_parameters
+        #N = (int(tag.corners[1][1]) - int(tag.corners[0][1]))
         
-        K = np.matrix([[cp[0],0,cp[2]],
-                       [0,cp[1],cp[3]],
-                       [0,0,1]])
+        h = tag.homography
+        
+        # Get X,Y value of center in np array form 
+        center = tag.center
 
-        h1 = homography[0]
-        h3 = homography[2]
+        # Draws circle dot at the center of the screen
+        cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
 
-        K_inv = np.linalg.inv(K)
+        pixelDistanceY1 =  (h[1][-1] - h[-1][1])
+        
+        #print(pixelDistanceY)
+        
+        pixelDistanceY = -2 * (int(pixelDistanceY1))
 
-        L = 1 / (np.linalg.norm(np.dot(K_inv, h1)))
+        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
 
-        T = L * (K_inv @ h3.reshape(3,1))
+        radians = (math.pi / 180) * degreesY
+
+        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
+
+        roundedDistance = float("{0:.2f}".format(distance))
+    
+    
+        
+        print(roundedDistance)
+        
+        
+        
+        # Get X,Y value of center in np array form 
+        # homography = tag.homography # TODO:try cv2.findHomography
+        # print(homography)
+        # cp = camera_parameters
+        
+        # K = np.matrix([[cp[0],0,cp[2]],
+        #                [0,cp[1],cp[3]],
+        #                [0,0,1]])
+
+        # h1 = homography[0]
+        # h3 = homography[2]
+
+        # K_inv = np.linalg.inv(K)
+
+        # L = 1 / (np.linalg.norm(np.dot(K_inv, h1)))
+
+        # T = L * (K_inv @ h3.reshape(3,1))
 
         #print(T)
 

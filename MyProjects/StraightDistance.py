@@ -26,14 +26,6 @@ cameraInUse = 0
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)
 
-def distance():
-    i=4
-    return i
-
-def cornerDetection():
-    i = 4
-    return 4 
-
 #TODO: Delete this when using videocapture 
 # Setting up camera width and height
 #if cameraInUse == 0:
@@ -52,11 +44,35 @@ while(True):
                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
+        
+        # Get X,Y value of center in np array form 
+        center = tag.center
 
+        # Draws circle dot at the center of the screen
+        cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
+
+        pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
+        
+        #print(pixelDistanceY)
+
+        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
+
+        radians = (math.pi / 180) * degreesY
+
+        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
+
+        roundedDistance = float("{0:.2f}".format(distance))
+    
     
         
         
         
+        
+        #print(-roundedDistance)
+
+
+        print(pixelDistanceY)
+        #time.sleep(1)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
