@@ -32,9 +32,6 @@ cap = cv2.VideoCapture(cameraInUse)
 #cap.set(4, 800)
 cap.set(4, 360)
 
-distances = []
-errors = []
-
 while(True):
     ret, frame = cap.read()
     frame = frame[120:,]
@@ -42,10 +39,24 @@ while(True):
     image = cv2.equalizeHist(image)
     val, th = cv2.threshold(image, 80, 255, cv2.THRESH_OTSU)
     # Tag size: 0.173m
-    tags = at_detector.detect(th, estimate_tag_pose=True, camera_params=camera_parameters, tag_size=0.152)
+    tags = at_detector.detect(th, estimate_tag_pose=False, camera_params=camera_parameters, tag_size=0.152)
 
-    
+    validTags = []
+
     for tag in tags:
+        pixelDistanceY = abs(tag.corners[2][1] - tag.corners[1][1])
+        degreesY = (pixelDistanceY / 2) * VisionConstants.degreesPerPixel
+        radians = (math.pi / 180) * degreesY
+        tangent = math.tan(radians)
+        if abs(tangent) < 1e-6:
+            distance = math.inf
+        distance = (VisionConstants.tagHeightCm / 2) / (math.tan(radians))
+        roundedDistance = float("{0:.2f}".format(distance))
+
+        if tag.tag_id > 8 or pixelDistanceY < 18 or roundedDistance > 500:
+            continue
+        else:
+            validTags.append((tag.tag_id, roundedDistance, 0))
         for p1, p2 in [(0, 1), (1, 2), (2, 3), (3, 0)]:
             cv2.line(frame,
                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
@@ -57,32 +68,16 @@ while(True):
 
         # Draws circle dot at the center of the screen
         cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
-
-        pixelDistanceY =  abs(tag.corners[2][1] - tag.corners[1][1])
-        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
-        radians = (math.pi / 180) * degreesY
-        tangent = math.tan(radians)
-        if abs(tangent) < 1e6:
-            continue
-        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
-        roundedDistance = float("{0:.2f}".format(distance))
-
-        if roundedDistance > 750:
-            errors.append(roundedDistance)
-        else:
-            distances.append(roundedDistance)
-        if len(distances) == 1000:
-            print(f"avg_distance = {sum(distances)/len(distances)}, errors = {len(errors)}")
-            distances.clear()
-            errors.clear()
-
+    # end for tag
+    if not validTags:
+        continue
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
     #cv2.imshow('Video Feed', image)
     #cv2.imshow('Video Feed', image_gray)
     #qcv2.imshow('Video Feed', th)
 
-    #print(image.shape)
+    #print(roundedDistance)
     # cv2.imshow('image',image)
 
     # The time took to proccess the frame
