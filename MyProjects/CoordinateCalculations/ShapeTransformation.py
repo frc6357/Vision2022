@@ -50,7 +50,7 @@ while(True):
         
         length = 173
         
-        pts1 = np.float32([corner1, corner2, corner3, corner4])    
+        pts1 = np.float32([corner3, corner4, corner2, corner1])
         #pts12 = np.float32([corner3, corner4, corner1, corner2])    
         
         

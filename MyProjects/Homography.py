@@ -16,10 +16,10 @@ at_detector = Detector(families='tag36h11',
 
 # Parameters gotten from passing in images to 
 # AnalyzeDistortion.py
-camera_parameters = [443.6319712,  # fx
-                     391.50381628, # fy
-                     959.49982957, # cx
-                     539.49965467] # cy
+camera_parameters = [629.45235321,  # fx
+                     761.58031703, # fy
+                     292.80595879, # cx
+                     524.85259558] # cy
 
 cameraInUse = 0
 

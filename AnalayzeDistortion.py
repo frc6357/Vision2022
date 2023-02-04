@@ -4,7 +4,7 @@ import glob
 
 # Size of the chessboard
 xCam=9
-yCam=13
+yCam=6
 
 # termination criteria
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -38,7 +38,7 @@ cv.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-img = cv.imread(glob.glob('images/29.jpg')[0])
+img = cv.imread(glob.glob('images/3936.jpg')[0])
 print(mtx)
 print(dist)
 
