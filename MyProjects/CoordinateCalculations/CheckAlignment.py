@@ -1,9 +1,7 @@
-import math
 import cv2
 import time
 import numpy as np
 from pupil_apriltags import Detector
-from CoordConstants import VisionConstants
 
 at_detector = Detector(families='tag36h11',
                        nthreads=16,
@@ -31,7 +29,7 @@ cap = cv2.VideoCapture(cameraInUse)
 #cap.set(4, 800)
 #cap.set(4, 600)
 while(True):
-    ret, frame = cap.read()
+    ret, frame,unChanged = cap.read()
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # Tag size: 0.173m
     tags = at_detector.detect(image, estimate_tag_pose=True, camera_params=camera_parameters, tag_size=0.173)
@@ -44,45 +42,12 @@ while(True):
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
         
-        # Get X,Y value of center in np array form 
-        center = tag.center
-
-        id = tag.tag_id
-        
-        id3disWall = 550 # Assumption until testing
-        # Draws circle dot at the center of the screen
-        cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
-        pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
-        
-        #print(pixelDistanceY)
-        
-
-        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
-
-        radians = (math.pi / 180) * degreesY
-
-        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
-
-        roundedDistance = float("{0:.2f}".format(distance))
-    
-
-
-        # ANGLE WORKS
-        degree  = (int(center[0]) - 320) * 0.0805555555
-        
-        straightDistance = degree * (math.sin(90 - degree))
-        
-        partialSideDistance = degree * (math.cos(90 - degree))
         
         
-        xDistance = id3disWall - partialSideDistance
-    
-            
         
-        print(xDistance)
 
     # Display the resulting frame
-    cv2.imshow('Video Feed',frame)
+    cv2.imshow('Video Feed', frame)
     # cv2.imshow('image',image)
 
     # The time took to proccess the frame
