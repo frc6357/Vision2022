@@ -6,7 +6,7 @@ import math
 from pupil_apriltags import Detector
 from Constants import VisionConstants
 
-at_detector = Detector(families='tag36h11',
+at_detector = Detector(families='tag16h5',
                        nthreads=16,
                        quad_decimate=1.0,
                        quad_sigma=0.0,
@@ -31,6 +31,8 @@ cap = cv2.VideoCapture(cameraInUse)
 #if cameraInUse == 0:
 #cap.set(4, 800)
 #cap.set(4, 600)
+
+
 while(True):
     ret, frame = cap.read()
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -46,6 +48,7 @@ while(True):
                     (255, 0, 255), 2)
         
         # Get X,Y value of center in np array form 
+        
         center = tag.center
 
         # Draws circle dot at the center of the screen
@@ -54,6 +57,7 @@ while(True):
         pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
         
         #print(pixelDistanceY)
+        
 
         degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
 

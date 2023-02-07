@@ -77,6 +77,7 @@ while(True):
         # Draws circle dot at the center of the screen
         cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
 
+        
         pixelDistanceY1 =  (h[1][-1] - h[-1][1])
         
         #print(pixelDistanceY)
@@ -91,9 +92,13 @@ while(True):
 
         roundedDistance = float("{0:.2f}".format(distance))
     
-    
+        #angle = math.atan2(h[1,0], h[0,0])
         
-        print(roundedDistance)
+        u, _, vh = np.linalg.svd(h[0:2, 0:2])
+        R = u @ vh
+        angle = math.atan2(R[1,0], R[0,0])
+        degreeangle = angle * (180/ math.pi)
+        print(degreeangle)
         
         
         

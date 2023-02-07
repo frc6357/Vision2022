@@ -41,8 +41,8 @@ while(True):
                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
-        #pts1 = np.float([[]])
         
+        # zero means x and one means y on second bracket
         corner1 = [tag.corners[0][0], tag.corners[0][1]] 
         corner2 = [tag.corners[1][0], tag.corners[1][1]]
         corner3 = [tag.corners[2][0], tag.corners[2][1]]
@@ -50,13 +50,13 @@ while(True):
         
         length = 173
         
-        pts1 = np.float32([corner1, corner2, corner3, corner4])    
-        #pts12 = np.float32([corner3, corner4, corner1, corner2])    
+        width, height = 170, 172
         
+        #Working homography corner order
+        pts1 = np.float32([corner3, corner1, corner2, corner4])    
+      
         
-        
-        
-        pts2 =  np.float32([[0,0], [length, 0], [0,length], [length, length]])
+        pts2 =  np.float32([[0,0], [width, 0], [0,height], [width, height]])
         
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
         

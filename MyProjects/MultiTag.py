@@ -56,9 +56,9 @@ while(True):
             id = tag.tag_id
             x = int(center[0])
             y = int(center[1])
-            
             cv2.putText(image,str(id), (x,y), cv2.FONT_HERSHEY_COMPLEX,1,(255,0,0), 2, cv2.LINE_AA)
-
+        
+        
     
         
         
