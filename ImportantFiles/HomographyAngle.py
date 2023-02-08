@@ -1,10 +1,20 @@
+
+"""Calculates the homographical matrix of the image
+    2/08/23 Justin Garrity"""
+
+#TODO: Change the class to make it compatible with tag16h5 family
+#TODO: Correct the angle and make sure it matches real life
+
 from cmath import tan
 import cv2
 import time
 import numpy as np
 import math
 from pupil_apriltags import Detector
-from CoordConstants import VisionConstants
+from _Constants import VisionConstants
+
+
+
 
 at_detector = Detector(families='tag36h11',
                        nthreads=16,
@@ -16,23 +26,21 @@ at_detector = Detector(families='tag36h11',
 
 # Parameters gotten from passing in images to 
 # AnalyzeDistortion.py
-camera_parameters = np.array([443.6319712,  # fx
-                     391.50381628, # fy
-                     959.49982957, # cx
-                     539.49965467]) # cy
+camera_parameters = [629.45235321,  # fx
+                     761.58031703, # fy
+                     292.80595879, # cx
+                     524.85259558] # cy
 
+# Index of Camera used (0 for pc and 1 for secondary camera)
 cameraInUse = 0
 
-
-
+#TODO: Not currently implemented, but would increase accuracy if implemented
+# Function returns focal length of the camera
 def focalLengthPx(imageCenter, corner):
     # Get X,Y value of center in np array form 
     center = imageCenter
 
-    
     pixelDistanceY =  (corner[2][1] - corner[1][1])
-        
-        #print(pixelDistanceY)
 
     degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
 
@@ -48,9 +56,6 @@ def focalLengthPx(imageCenter, corner):
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)
 
-#TODO: Delete this when using videocapture 
-# Setting up camera width and height
-
 while(True):
     ret, frame = cap.read()
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -65,46 +70,16 @@ while(True):
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
         
-      
         h = tag.homography
-        
-        # Get X,Y value of center in np array form 
-        center = tag.center
-
-        # Draws circle dot at the center of the screen
-        cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
-
-        pixelDistanceY1 =  (h[1][1] - h[-1][1])
-        
-        #print(pixelDistanceY)
-        
-        pixelDistanceY = -2.71 * (int(pixelDistanceY1))
-
-        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
-
-        radians = (math.pi / 180) * degreesY
-
-        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
-
-        roundedDistance = float("{0:.2f}".format(distance))
-    
-        n = cv2.decomposeHomographyMat(h, camera_parameters)
-
-        
-        print(n)
-        
-        
-
-
-        
+        angle = math.atan2(h[1,0], h[0,0])
+        degreeangle = angle * (180/ math.pi)
+        print(degreeangle)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
-    # cv2.imshow('image',image)
 
     # The time took to proccess the frame
     endTime = time.monotonic()
-    # print(f"{endTime - startTime:.4f}")
 
     # Waits for a user input to quit the application
     if cv2.waitKey(1) & 0xFF == ord('q'):

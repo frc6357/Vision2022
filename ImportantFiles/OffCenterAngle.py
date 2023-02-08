@@ -1,7 +1,16 @@
+"""Calculates the angle based on how many pixels off the center of the april tag is
+    2/08/23 Justin Garrity"""
+    
+#TODO: Change the class to make it compatible with tag16h5 family
+#TODO: Recalulate the degrees per pixel constant to a more accurate number
+#TODO: This currently calcualtes distance from the wall, change it so it only return the angle
+
 import cv2
 import time
+import math
 import numpy as np
 from pupil_apriltags import Detector
+from _Constants import VisionConstants
 
 at_detector = Detector(families='tag36h11',
                        nthreads=16,
@@ -41,28 +50,43 @@ while(True):
                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
                     (255, 0, 255), 2)
+        id = tag.tag_id
         
+        id3disWall = 550 # Assumption until testing
         # Get X,Y value of center in np array form 
         center = tag.center
 
         # Draws circle dot at the center of the screen
         cv2.circle(frame, (int(center[0]), int(center[1])), radius=8, color=(0, 0, 255), thickness=-1)
 
-        # If the center is located on the right of the screen, degree calculation  for the right will be done.
-        if center[0] > 320:
-            # Subtract the center position by 320 to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
-            degree  = (int(center[0]) - 320) * 0.19328
-        # If the center is located on the left of the screen, degree calculation  for the right will be done.
-        elif center[0] <= 320:
-            # Subtract 320 by the center position to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
-            degree = (320 - int(center[0])) * 0.19328
-        # In case the tag is not on the screen.
-        else:
-            continue
+        pixelDistanceY =  (tag.corners[2][1] - tag.corners[1][1])
         
-        # Temp Test Delete Later
-        #print(frame.shape)
-        print(degree)
+        #print(pixelDistanceY)
+        
+
+        degreesY = (pixelDistanceY/2) * VisionConstants.degreesPerPixel
+
+        radians = (math.pi / 180) * degreesY
+
+        distance = (VisionConstants.tagHeightCm/2) / (math.tan(radians))
+
+        roundedDistance = float("{0:.2f}".format(distance))
+    
+
+
+        # ANGLE WORKS
+        degree  = (int(center[0]) - 320) * 0.0805555555
+        
+        straightDistance = degree * (math.sin(90 - degree))
+        
+        partialSideDistance = degree * (math.cos(90 - degree))
+        
+        
+        xDistance = id3disWall - partialSideDistance
+    
+            
+        
+        print(xDistance)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
