@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import ipaddress
+import socket
+import struct
+import flask
+import yaml
+import time
+
+import argparse
+
+DEF_IP_ADDR = ipaddress.ip_address('127.0.0.1')
+DEF_PORT = 5800
+DEF_DELAY_S = 1
+DEF_MAX_PKT = 10
+
+parser = argparse.ArgumentParser(prog='server-client-ex')
+
+parser.add_argument('--ip-addr', type=ipaddress.ip_address, default=DEF_IP_ADDR, help="IP address of destination")
+parser.add_argument('--port', type=int, default=DEF_PORT, help="port of destination")
+parser.add_argument('--start-delay', type=int, default=DEF_DELAY_S, help="delay before sending packets")
+parser.add_argument('--max-pkts', type=int, default=DEF_MAX_PKT, help="Max packets to send")
+
+parser.add_argument('--client', default=False, action='store_true', help="Behave as client")
+
+args = parser.parse_args()
+
+if args.start_delay > 0:
+  time.sleep(args.start_delay)
+
+if args.client:
+  print(f"Trying to receive packets on port {args.port}")
+else:
+  print(f"Trying to send packets to {args.ip_addr}:{args.port}")
