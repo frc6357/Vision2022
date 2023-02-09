@@ -38,7 +38,7 @@ while(True):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     image = cv2.equalizeHist(image)
     val, th = cv2.threshold(image, 80, 255, cv2.THRESH_OTSU)
-    # Tag size: 0.173m
+    # Tag size: 0.152m
     tags = at_detector.detect(th, estimate_tag_pose=False, camera_params=camera_parameters, tag_size=0.152)
 
     validTags = []
@@ -53,7 +53,7 @@ while(True):
         distance = (VisionConstants.tagHeightCm / 2) / (math.tan(radians))
         roundedDistance = float("{0:.2f}".format(distance))
 
-        if tag.tag_id > 8 or pixelDistanceY < 18 or roundedDistance > 500:
+        if tag.tag_id > 8 or tag.tag_id == 0 or pixelDistanceY < 18 or roundedDistance > 500:
             continue
         else:
             validTags.append((tag.tag_id, roundedDistance, 0))
@@ -77,7 +77,7 @@ while(True):
     #cv2.imshow('Video Feed', image_gray)
     #qcv2.imshow('Video Feed', th)
 
-    #print(roundedDistance)
+    print(validTags)
     # cv2.imshow('image',image)
 
     # The time took to proccess the frame

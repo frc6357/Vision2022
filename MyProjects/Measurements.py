@@ -1,10 +1,45 @@
+#!/usr/bin/env python3
+import json
+from cmath import tan
 import cv2
 import time
-import json
 import numpy as np
+import math
 from pupil_apriltags import Detector
 from Constants import VisionConstants
-import math
+import argparse
+import ipaddress
+import struct
+
+class tagDG:
+    frameCount = 0
+    headerFormat = "HBB"
+    tagFormat = "BbH"
+    def __int__(self):
+        self.tags = []
+        self.frameID = tagDG.frameCount
+        tagDG.frameCount += 1
+
+    def pack(self):
+        pass
+
+    @staticmethod
+    def unpack(dgramBytes):
+        pass
+
+    def addTag(self, tagID, distanceCM, angleDegrees):
+        self.tags.append((int(tagID) &0xff, int(distanceCM) &0xffff, int(angleDegrees) &0xff))
+
+RIO_IP = ipaddress.ip_address('10.63.57.2')
+UDP_PORT = 5800
+
+parser = argparse.ArgumentParser(prog="Measurements", description=
+"""Process AprilTag frame and returns the distance (cm) and angle (degrees) from the AprilTag"""
+)
+parser.add_argument("--debug", default=False, help="Enable debugging output", action="store_true")
+parser.add_argument("--ip-addr", default=RIO_IP, type=ipaddress.ip_address)
+parser.add_argument("--port", default=UDP_PORT, type=int)
+parser.add_argument("--send-emptyframe", default=False, action="store_true")
 
 at_detector = Detector(families='tag16h5',
                        nthreads=4,
@@ -14,23 +49,23 @@ at_detector = Detector(families='tag16h5',
                        decode_sharpening=0.25,
                        debug=0)
 
-# Parameters gotten from passing in images to 
+# Parameters gotten from passing in images to
 # AnalyzeDistortion.py
 Cal_file = "../LogitechC920.json"
 parameters = json.load(open(Cal_file))
 camera_parameters = [parameters["fx"], parameters["fy"], parameters["cx"], parameters["cy"]]
-
 cameraInUse = 0
 
 # Setting up the camera feed
 cap = cv2.VideoCapture(cameraInUse)
 
-#TODO: Delete this when using videocapture 
+#TODO: Delete this when using videocapture
 # Setting up camera width and height
 #if cameraInUse == 0:
 #cap.set(4, 800)
-#cap.set(4, 600)
-while(True):
+cap.set(4, 360)
+
+while (True):
     ret, frame = cap.read()
     frame = frame[120:, ]
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -40,7 +75,7 @@ while(True):
     tags = at_detector.detect(th, estimate_tag_pose=False, camera_params=camera_parameters, tag_size=0.152)
 
     validTags = []
-    
+
     for tag in tags:
         pixelDistanceY = abs(tag.corners[2][1] - tag.corners[1][1])
         degreesY = (pixelDistanceY / 2) * VisionConstants.degreesPerPixel
@@ -48,20 +83,21 @@ while(True):
         tangent = math.tan(radians)
         if abs(tangent) < 1e-6:
             distance = math.inf
-        distance = (VisionConstants.tagHeightCm / 2) / (tangent)
+        else:
+            distance = (VisionConstants.tagHeightCm / 2) / (tangent)
         roundedDistance = float("{0:.2f}".format(distance))
 
-        if tag.tag_id > 8 or pixelDistanceY < 18 or roundedDistance > 500:
+        if tag.tag_id > 8 or pixelDistanceY < 24 or roundedDistance > 250:
             continue
         else:
             validTags.append((tag.tag_id, roundedDistance, 0))
         for p1, p2 in [(0, 1), (1, 2), (2, 3), (3, 0)]:
             cv2.line(frame,
-                    (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
-                    (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
-                    (255, 0, 255), 2)
-        
-        # Get X,Y value of center in np array form 
+                     (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
+                     (int(tag.corners[p2][0]), int(tag.corners[p2][1])),
+                     (255, 0, 255), 2)
+
+        # Get X,Y value of center in np array form
         center = tag.center
 
         # Draws circle dot at the center of the screen
@@ -70,7 +106,7 @@ while(True):
         # If the center is located on the right of the screen, degree calculation  for the right will be done.
         if center[0] > 320:
             # Subtract the center position by 320 to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
-            degree  = (int(center[0]) - 320) * 0.09328
+            degree = (int(center[0]) - 320) * 0.09328
         # If the center is located on the left of the screen, degree calculation  for the right will be done.
         elif center[0] <= 320:
             # Subtract 320 by the center position to get the distance from the center of the screen to the center of the square. Then multiply by 0.3957 to get degrees per pixel.
@@ -78,10 +114,13 @@ while(True):
         # In case the tag is not on the screen.
         else:
             continue
-        
-        # Temp Test Delete Later
-        #print(frame.shape)
-        print(degree)
+
+    # end for tag
+    if not validTags:
+        continue
+
+    print(degree)
+    print(validTags)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
