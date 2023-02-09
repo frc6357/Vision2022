@@ -73,7 +73,7 @@ while(True):
         h = tag.homography
         angle = math.atan2(h[1,0], h[0,0])
         degreeangle = angle * (180/ math.pi)
-        print(degreeangle)
+        print(h)
 
     # Display the resulting frame
     cv2.imshow('Video Feed',frame)
