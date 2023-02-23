@@ -48,7 +48,11 @@ async def sender(queue: asyncio.Queue, ipaddr: ipaddress.ip_address, port: int):
     while True:
         pkt = await queue.get()
         #print(f"Pulled {pkt} from queue")
-        sock.sendto(pkt.pack())
+        try:
+            sock.sendto(pkt.pack())
+        except ConnectionRefusedError:
+            # ignore dropped packets
+            pass
         #print(f"Sent {pkt.pack()}")
         queue.task_done()
         await asyncio.sleep(.020)
