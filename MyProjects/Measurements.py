@@ -10,29 +10,58 @@ from Constants import VisionConstants
 import argparse
 import ipaddress
 import struct
+import pathlib
+from functools import reduce
 
 class tagDG:
     frameCount = 0
     headerFormat = "HBB"
     tagFormat = "BbH"
-    def __int__(self):
+    headerBytes = 4
+    tagBytes = 4
+    def __init__(self):
         self.tags = []
         self.frameID = tagDG.frameCount
         tagDG.frameCount += 1
+        self.debugInfo = 0
 
     def pack(self):
-        pass
+        size = tagDG.headerBytes + len(self.tags) * tagDG.tagBytes
+        buffer = bytearray(size)
+        struct.pack_into(tagDG.headerFormat, buffer, 0, self.frameID, len(self.tags), self.debugInfo)
+        for index, tag in enumerate(self.tags):
+            struct.pack_into(tagDG.tagFormat, buffer, tagDG.headerBytes + tagDG.tagBytes * index, *tag)
+        return buffer
 
     @staticmethod
-    def unpack(dgramBytes):
-        pass
+    def unpack(buffer):
+        if len(buffer) < 4:
+            raise ValueError("buffer was too small")
 
-    def addTag(self, tagID, distanceCM, angleDegrees):
-        self.tags.append((int(tagID) &0xff, int(distanceCM) &0xffff, int(angleDegrees) &0xff))
+        frameID, tagCount, debugInfo = struct.unpack_from(tagDG.headerFormat, buffer, 0)
+        dg = tagDG()
+        dg.frameID = frameID
+        dg.debugInfo = debugInfo
+        if len(buffer) < tagDG.headerBytes + tagCount * tagDG.tagBytes:
+            raise ValueError("buffer was too small")
+        for index in range(tagCount):
+            tag = struct.unpack_from(tagDG.tagFormat, buffer, tagDG.headerBytes + tagDG.tagBytes * index)
+            dg.addTag(*tag)
+
+    def addTag(self, tagID, angleDegrees, distanceCM):
+        self.tags.append((int(tagID) &0xff, int(angleDegrees) &0xff , int(distanceCM) &0xffff))
+
+    def __repr__(self):
+        message = f"tagDG({self.frameID}, {len(self.tags)}, {self.debugInfo}"
+        for tag in self.tags:
+            message += f", {tag[0]}, {tag[1]}, {tag[2]}"
+        message += ")"
+        return message
 
 RIO_IP = ipaddress.ip_address('10.63.57.2')
 UDP_PORT = 5800
 
+LOG_DEFAULT = pathlib.Path("Tag-log")
 parser = argparse.ArgumentParser(prog="Measurements", description=
 """Process AprilTag frame and returns the distance (cm) and angle (degrees) from the AprilTag"""
 )
@@ -40,6 +69,9 @@ parser.add_argument("--debug", default=False, help="Enable debugging output", ac
 parser.add_argument("--ip-addr", default=RIO_IP, type=ipaddress.ip_address)
 parser.add_argument("--port", default=UDP_PORT, type=int)
 parser.add_argument("--send-emptyframe", default=False, action="store_true")
+parser.add_argument("--log", default=LOG_DEFAULT, type = pathlib.Path)
+
+args = parser.parse_args()
 
 at_detector = Detector(families='tag16h5',
                        nthreads=4,
@@ -65,6 +97,8 @@ cap = cv2.VideoCapture(cameraInUse)
 #cap.set(4, 800)
 cap.set(4, 360)
 
+logfile = open(args.log, "w")
+
 while (True):
     ret, frame = cap.read()
     frame = frame[120:, ]
@@ -74,7 +108,8 @@ while (True):
     # Tag size: 0.173m
     tags = at_detector.detect(th, estimate_tag_pose=False, camera_params=camera_parameters, tag_size=0.152)
 
-    validTags = []
+
+    tagDatagram = tagDG()
 
     for tag in tags:
         pixelDistanceY = abs(tag.corners[2][1] - tag.corners[1][1])
@@ -87,10 +122,8 @@ while (True):
             distance = (VisionConstants.tagHeightCm / 2) / (tangent)
         roundedDistance = float("{0:.2f}".format(distance))
 
-        if tag.tag_id > 8 or pixelDistanceY < 24 or roundedDistance > 250:
+        if tag.tag_id > 8 or tag.tag_id == 0 or pixelDistanceY < 24 or roundedDistance > 250:
             continue
-        else:
-            validTags.append((tag.tag_id, roundedDistance, 0))
         for p1, p2 in [(0, 1), (1, 2), (2, 3), (3, 0)]:
             cv2.line(frame,
                      (int(tag.corners[p1][0]), int(tag.corners[p1][1])),
@@ -115,15 +148,14 @@ while (True):
         else:
             continue
 
-    # end for tag
-    if not validTags:
-        continue
+        tagDatagram.addTag(tag.tag_id, degree, roundedDistance)
 
-    print(degree)
-    print(validTags)
+    # end for tag
+
+    print(str(tagDatagram), file=logfile)
 
     # Display the resulting frame
-    cv2.imshow('Video Feed',frame)
+    #cv2.imshow('Video Feed',frame)
     # cv2.imshow('image',image)
 
     # The time took to proccess the frame
@@ -131,9 +163,12 @@ while (True):
     # print(f"{endTime - startTime:.4f}")
 
     # Waits for a user input to quit the application
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #break
 
+    #end while
+
+close(logfile)
 
 cap.release()
 cv2.destroyAllWindows()
